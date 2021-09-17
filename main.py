@@ -28,16 +28,12 @@ def generateColor(bounds=None, amount=3, PLACES=2):
 	return tuple(list(map(lambda x: round(x / bounds[1], PLACES), outlist)))
 
 
-
-
 def trySet(lst, ind, fval=0):
 	try:
 		i = lst[ind]
 	except:
 		return fval
 	return lst[ind]
-
-
 
 
 def smooth(mx, mn, xl, yl, c="blue"):
@@ -127,29 +123,51 @@ def graph(amt, NSEG=NSEG, ARMLEN=2):
 		if x + 1 not in labels:
 			ax2.plot(OUT, YLIST, color=generateColor(), label=f"Iteration {x + 1}")
 			labels.append(x + 1)
-	print(json.dumps(dct, indent=4))
 	lk = list(dct.values())
 	for v in lk:
-		rx, ry = smooth(0, amt - 1, list(range(amt - 1)), v["ITM"][0:-1])
-		if lk.index(v) == len(lk) - 1:
-			ax1.plot(
-				rx,
-				ry,
-				color=v["CLR"],
-				lw=3,
-				alpha=0.8,
-				label="Smoothed Line"
-			)
-			ax1.plot(
-				list(range(amt - 1)),
-				v["ITM"][0:-1],
-				color=(220 / 255, 220 / 255, 220 / 255),
-				lw=4,
-				alpha=0.3,
-				linestyle="dashed",
-				label="Original Line"
-			)
-	for v in lk:
+		rx, ry = [[],[]]
+		try: rx, ry = smooth(0, amt - 1, list(range(amt - 1)), v["ITM"][0:-1])
+		except:
+			rx, ry = [list(range(amt - 1)), v["ITM"][0:-1]]
+			try:
+				if lk.index(v) == len(lk) - 1:
+					ax1.plot(
+						rx,
+						ry,
+						color=v["CLR"],
+						lw=3,
+						alpha=0.8,
+						label="Smoothed Line"
+					)
+					ax1.plot(
+						list(range(amt - 1)),
+						v["ITM"][0:-1],
+						color=(220 / 255, 220 / 255, 220 / 255),
+						lw=4,
+						alpha=0.3,
+						linestyle="dashed",
+						label="Original Line"
+					)
+			except:
+				try:
+					sx, sy = smooth(0, amt - 1, list(range(amt)), lk[lk.index(v)-1]["ITM"])
+					ax1.plot(
+						sx,
+						sy,
+						color=v["CLR"],
+						lw=3,
+						alpha=0.8,
+						label="Smoothed Line"
+					)
+				except:
+					ax1.plot(
+						list(range(amt)),
+						lk[lk.index(v)-1]["ITM"],
+						color=v["CLR"],
+						lw=3,
+						alpha=0.8,
+						label="Smoothed Line"
+					)
 		try:
 			ax1.scatter(
 				list(range(amt - 1))[lk.index(v)],
@@ -182,6 +200,72 @@ def graph(amt, NSEG=NSEG, ARMLEN=2):
 	)
 	ax1.set_ylabel("$dx$")
 	ax2.legend()
+	plt.show(block=False)
 
-graph(7,NSEG=20,ARMLEN=7)
-plt.show()
+
+graph(7, NSEG=20, ARMLEN=7)
+
+layout = [
+	[
+		sg.Text('Amount of Segments', size=(20, 1)),
+		sg.Slider(
+			(4, 50),
+			10,
+			1,
+			orientation="h",
+			size=(20, 15),
+			key="-LINK SLIDER-",
+			enable_events=True
+		)
+	],
+	[
+		sg.Text('Segment Length', size=(20, 1)),
+		sg.Slider(
+			(2, 100),
+			5,
+			1,
+			orientation="h",
+			size=(20, 15),
+			key="-LENGTH SLIDER-",
+			enable_events=True
+		)
+	],
+	[
+		sg.Text('Amount of Iterations', size=(20, 1)),
+		sg.Slider(
+			(1, 100),
+			10,
+			1,
+			orientation="h",
+			size=(20, 15),
+			key="-ITER SLIDER-",
+			enable_events=True
+		)
+	],
+	[sg.Button("Generate Simulation")],
+]
+window = sg.Window(
+	title="N-Pendulum-Simulator",
+	layout=layout,
+	margins=(100, 50)
+)
+currentbutton = None
+hasclickedbutton = False
+matplotlibWindowOpen = False
+
+while True:
+	event, values = window.read()
+	if not matplotlibWindowOpen and event == sg.WIN_CLOSED:
+		break
+	elif event == "Generate Simulation":
+		links, armlength, iterations = [values["-LINK SLIDER-"], values["-LENGTH SLIDER-"], values["-ITER SLIDER-"]]
+		links = round(links)
+		armlength = round(armlength)
+		iterations = round(iterations)
+		print(json.dumps(values,indent=4))
+		graph(iterations, NSEG=links, ARMLEN=armlength)
+		matplotlibWindowOpen = True
+	elif matplotlibWindowOpen and event == sg.WIN_CLOSED:
+		matplotlibWindowOpen = False
+
+window.close()
