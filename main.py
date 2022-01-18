@@ -203,8 +203,6 @@ def graph(amt, NSEG=NSEG, ARMLEN=2):
 	plt.show(block=False)
 
 
-graph(7, NSEG=20, ARMLEN=7)
-
 layout = [
 	[
 		sg.Text('Amount of Segments', size=(20, 1)),
